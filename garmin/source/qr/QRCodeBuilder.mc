@@ -125,8 +125,23 @@ class QRCodeBuilder {
         mProgress = 0;
         mStatus = STARTED;
         mTimer = new Timer.Timer();
-        mTimer.start(method(:_iterate), QrBuildSettings.getBuildingTimeInterval(), true);
+        // Pump many micro-steps per tick — Version-1 codes are tiny but the
+        // original encoder was written to drip work across 50ms intervals.
+        mTimer.start(method(:_pump), 20, true);
         return null;
+    }
+
+    //! Drain as much encoder work as possible each timer callback.
+    function _pump() as Void {
+        if (mStatus != STARTED) {
+            return;
+        }
+        for (var i = 0; i < 250; i += 1) {
+            if (mTimer == null || mStatus != STARTED) {
+                return;
+            }
+            _iterate();
+        }
     }
 
     //! Will become STOPPED only if IDLE or STARTED
@@ -275,25 +290,18 @@ class QRCodeBuilder {
 
             case ADD_DATA_NUMERIC_REPRESENTATION: {
                 $.log("ADD_DATA_NUMERIC_REPRESENTATION");
-                // Get a numeric representation of the data
-                if (!mProgressPayload.hasKey(:current)) {
-                    var data = [] as Numbers;
-                    var chunks = _grouped(8, mData.toCharArray(), null);
-                    mProgressPayload = { :current => 0, :total => chunks.size(), :chunks => chunks, :data => data };
-                } else {
-                    var chunks = mProgressPayload[:chunks];
-                    var i = mProgressPayload[:current];
+                // Convert the full bitstring in one pass (Version-1 payloads are ~20 bytes).
+                var data = [] as Numbers;
+                var chunks = _grouped(8, mData.toCharArray(), null);
+                for (var i = 0; i < chunks.size(); i += 1) {
                     var chunk = chunks[i];
                     var string = "";
                     for (var c = 0; c < chunk.size(); c += 1) {
                         string += chunk[c].toString();
                     }
-                    mProgressPayload[:data].add(string.toNumberWithBase(2));
-                    mProgressPayload[:current] += 1;
-                    if (mProgressPayload[:current] < mProgressPayload[:total]) {
-                        return;
-                    }
+                    data.add(string.toNumberWithBase(2));
                 }
+                mProgressPayload = { :data => data };
                 break;
             }
 
@@ -334,7 +342,6 @@ class QRCodeBuilder {
                 } else {
                     // Calculate the error blocks
                     var dataBlocks = mProgressPayload[:dataBlocks];
-                    // var errorBlocks = mProgressPayload[:errorBlocks];
                     var i = mProgressPayload[:current];
                     var block = dataBlocks[i];
                     _makeErrorBlock(block, i);
@@ -632,15 +639,12 @@ class QRCodeBuilder {
             }
 
             case MAKE_CODE_CHOOSE_BEST_MASK: {
+                // We only generate one mask — skip the expensive penalty scoring.
                 if (mProgressPayload.hasKey(:template)) {
                     mProgressPayload = {};
                 }
                 $.log("MAKE_CODE_CHOOSE_BEST_MASK");
-                if (mInput.length() > QrBuildSettings.criticalInputSize()) {
-                    mMaskIdx = 0;
-                } else {
-                    _chooseBestMask();
-                }
+                mMaskIdx = 0;
                 break;
             }
         }
@@ -809,7 +813,8 @@ class QRCodeBuilder {
     //! The template parameter is a code matrix that will server as the base for all the generated masks.
     private function _makeMasks() as Void {
         if (!mProgressPayload.hasKey(:current)) {
-            var nmasks = mInput.length() > QrBuildSettings.criticalInputSize() ? 1 : QRCodeTables.maskPatterns.size();
+            // One mask only for speed; format bits still match mask index 0.
+            var nmasks = 1;
             var masks = new [nmasks];
 
             mProgressPayload.put(:current, 0);
@@ -1384,9 +1389,10 @@ class QRCodeBuilder {
     private function _binaryString(value as Number, length as Number) as String {
         var binValue = 0;
         var exp = 0;
-        while (value != 0) {
-            binValue += ((value % 2).toNumber() * Math.pow(10, exp)).toLong();
-            value = (value / 2).toLong();
+        var remaining = value;
+        while (remaining != 0) {
+            binValue += ((remaining % 2).toNumber() * Math.pow(10, exp)).toLong();
+            remaining = (remaining / 2).toLong();
             exp += 1;
         }
         return binValue.toLong().format(Lang.format("%0$1$d", [length]));

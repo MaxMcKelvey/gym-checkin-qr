@@ -12,6 +12,7 @@ module Rez {
     module Strings {
         (:initialized) var BuildError as ResourceId;
         (:initialized) var ConfigError as ResourceId;
+        (:initialized) var GlanceHint as ResourceId;
         (:initialized) var Generating as ResourceId;
         (:initialized) var Title as ResourceId;
         (:initialized) var AppName as ResourceId;

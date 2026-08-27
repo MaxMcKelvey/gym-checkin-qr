@@ -95,7 +95,7 @@ class LaFitnessQrView extends WatchUi.View {
         mState = BUILDING;
         WatchUi.requestUpdate();
 
-        mBuilder = new QRCodeBuilder(mPayload, QRCodeBuilder.M);
+        mBuilder = new QRCodeBuilder(mPayload, QRCodeBuilder.L);
         mBuilder.subscribe(weak(), :onBuilderStatus);
         var error = mBuilder.start();
         if (error != null) {
