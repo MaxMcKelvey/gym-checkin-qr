@@ -1,0 +1,28 @@
+# Connect IQ / Monkey C
+bin/
+*.prg
+*.iq
+*.mir
+*.mangled
+*.debug.xml
+
+# Developer key (keep private)
+*.der
+developer_key*
+
+# LA Fitness credentials (extract locally — see docs/extract-credentials.md)
+docs/credentials.local.json
+
+# React Native / Expo
+phone/node_modules/
+phone/.expo/
+phone/dist/
+phone/web-build/
+
+# OS / editor
+.DS_Store
+.vscode/*
+!.vscode/settings.json
+!.vscode/extensions.json
+*.swp
+*~

@@ -1,0 +1,4 @@
+module Constants {
+    const EPOCH = 1767225600; // 2026-01-01 00:00:00 UTC
+    const RADIX32 = "0123456789ABCDEFGHIJKLMNOPQRSTUV";
+}
