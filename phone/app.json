@@ -1,8 +1,8 @@
 {
   "expo": {
-    "name": "LA Fitness QR",
-    "slug": "la-fitness-qr",
-    "scheme": "la-fitness-qr",
+    "name": "Gym QR",
+    "slug": "gym-qr",
+    "scheme": "gym-qr",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
@@ -11,6 +11,7 @@
       "supportsTablet": true
     },
     "android": {
+      "package": "com.maxmckelvey.fitnessqr",
       "adaptiveIcon": {
         "backgroundColor": "#E6F4FE",
         "foregroundImage": "./assets/android-icon-foreground.png",
@@ -23,7 +24,15 @@
       "favicon": "./assets/favicon.png"
     },
     "plugins": [
-      "expo-router"
-    ]
+      "expo-router",
+      "expo-font"
+    ],
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "c4820315-a2f9-44f5-896f-3816eb9f8fc7"
+      }
+    },
+    "owner": "maxmckelvey"
   }
 }

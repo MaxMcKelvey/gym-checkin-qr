@@ -1,8 +1,8 @@
-# LA Fitness check-in code — algorithm
+# Gym check-in code — algorithm
 
-This document is the **shared specification** for generating the LA Fitness gym check-in payload. Both the Garmin watch app (`garmin/`) and the phone app (`phone/`, React Native Expo) must implement the same logic so they produce identical codes at the same moment.
+This document is the **shared specification** for generating the check-in payload used by **A Fitness Club from LA**. Both the Garmin watch app (`garmin/`) and the phone app (`phone/`, React Native Expo) must implement the same logic so they produce identical codes at the same moment.
 
-The scanner at the gym reads a **QR code** whose content is the 15-character payload string below. The UI label **“LA Fitness”** is display-only and is **not** encoded in the QR.
+The scanner at the gym reads a **QR code** whose content is the 15-character payload string below. The UI label **“Gym”** is display-only and is **not** encoded in the QR.
 
 ---
 
@@ -53,7 +53,7 @@ Within a minute, `M` is constant — e.g. `00:00:00` through `00:00:59` UTC on 2
 
 ## Secret key
 
-The TOTP secret is stored by the LA Fitness app as **RFC 4648 base32** (no padding). Extract it from the Android app's `CheckinValues` file — see [`extract-credentials.md`](extract-credentials.md).
+The TOTP secret is stored by **A Fitness Club from LA**'s app as **RFC 4648 base32** (no padding). Extract it from the Android app's `CheckinValues` file — see [`extract-credentials.md`](extract-credentials.md).
 
 After base32 decode you get a **10-byte** HMAC key.
 
@@ -123,7 +123,7 @@ If the account is re-registered, this value may change; both apps must use the s
 payload = "@1" + rollingCode + timeCounter + memberId
 ```
 
-Generate a **QR code** from `payload` (the raw string, no URL wrapper unless LA Fitness expects one — use the 15-char string as-is unless testing proves otherwise).
+Generate a **QR code** from `payload` (the raw string, no URL wrapper unless the club expects one — use the 15-char string as-is unless testing proves otherwise).
 
 ---
 
@@ -165,7 +165,7 @@ The `phone/` app (React Native Expo + NativeWind) implements this spec. Credenti
 
 ## Credentials
 
-See [`extract-credentials.md`](extract-credentials.md) for pulling `SecretKey` and `MemberId` from the LA Fitness Android app via emulator + adb.
+See [`extract-credentials.md`](extract-credentials.md) for pulling `SecretKey` and `MemberId` from **A Fitness Club from LA**'s Android app via emulator + adb.
 
 ---
 

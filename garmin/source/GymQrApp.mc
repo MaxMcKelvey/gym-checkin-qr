@@ -3,7 +3,7 @@ import Toybox.Lang;
 import Toybox.System;
 import Toybox.WatchUi;
 
-class LaFitnessQrApp extends Application.AppBase {
+class GymQrApp extends Application.AppBase {
 
     function initialize() {
         AppBase.initialize();
@@ -16,12 +16,12 @@ class LaFitnessQrApp extends Application.AppBase {
     }
 
     function getInitialView() as [Views] or [Views, InputDelegates] {
-        return [new $.LaFitnessQrView(), new $.LaFitnessQrDelegate()];
+        return [new $.GymQrView(), new $.GymQrDelegate()];
     }
 
     //! Required for At a Glance on FR965 / CIQ 4+ ("super apps").
     function getGlanceView() as [WatchUi.GlanceView] or [WatchUi.GlanceView, WatchUi.GlanceViewDelegate] or Null {
-        return [new $.LaFitnessQrGlanceView()];
+        return [new $.GymQrGlanceView()];
     }
 }
 

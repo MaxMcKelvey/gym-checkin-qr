@@ -1,6 +1,6 @@
-# Extracting LA Fitness credentials
+# Extracting credentials (A Fitness Club from LA)
 
-Your **base32 secret** and **member ID** come from the official LA Fitness Android app after device registration. Both the Garmin and phone apps read these values from local configuration — they are **not** in this repository.
+Your **base32 secret** and **member ID** come from the official Android app for A Fitness Club from LA after device registration. Both the Garmin and phone apps read these values from local configuration — they are **not** in this repository.
 
 This workflow uses a **Windows Android emulator** for login (headed UI) and **WSL only for the final `strings` step**. Run `adb` from **Windows PowerShell**, not WSL, so two adb servers do not fight over the device.
 
@@ -10,7 +10,7 @@ This workflow uses a **Windows Android emulator** for login (headed UI) and **WS
 
 - Windows with Android Studio (bundles SDK, emulator, adb)
 - WSL (optional, for `strings` on the pulled file)
-- LA Fitness APK (e.g. from APKPure)
+- The club's Android APK (e.g. from APKPure)
 
 ---
 
@@ -38,7 +38,7 @@ Click **▶** in Device Manager. A normal phone window opens — use it like a p
 
 ---
 
-## 4. Install the LA Fitness APK
+## 4. Install the club APK
 
 **Easiest:** drag the APK onto the emulator window.
 
@@ -46,7 +46,7 @@ Click **▶** in Device Manager. A normal phone window opens — use it like a p
 
 ```powershell
 cd $env:LOCALAPPDATA\Android\Sdk\platform-tools
-.\adb install "C:\path\to\LA_Fitness_Mobile_LAF_1_267_APKPure.apk"
+.\adb install "C:\path\to\club_mobile.apk"
 ```
 
 If install fails with a split-APK error, the download may be an XAPK — unzip it and run:
@@ -61,7 +61,7 @@ A single universal APK usually works with plain `adb install`.
 
 ## 5. Sign in and trigger provisioning
 
-1. Open LA Fitness on the emulator
+1. Open the club app on the emulator
 2. Log in with your account
 3. Open the membership card / check-in screen
 4. Complete **device registration** if prompted
@@ -82,6 +82,8 @@ cd $env:LOCALAPPDATA\Android\Sdk\platform-tools
 .\adb shell ls -la /data/data/com.lafitness.lafitness/files/
 .\adb pull /data/data/com.lafitness.lafitness/files/CheckinValues C:\temp\CheckinValues
 ```
+
+(`com.lafitness.lafitness` is the Android package id for A Fitness Club from LA's official app.)
 
 `adb root` restarts `adbd` as root on Google APIs images so you can read app-private storage. Confirm `CheckinValues` appears in the `ls` output (alongside `CustomerBasic` and other files) before pulling.
 
@@ -107,7 +109,7 @@ TimeDiffL
 Ljava/lang/String;L
 Usernameq
 YOUR_BASE32_SECRET_HERE
-your_la_fitness_username
+your_username
 ```
 
 ### What to extract
@@ -134,7 +136,7 @@ cp docs/credentials.example.json docs/credentials.local.json
 {
   "secretBase32": "YOUR_BASE32_SECRET_HERE",
   "memberSuffix": "O5TUJ",
-  "username": "your_la_fitness_username"
+  "username": "your_username"
 }
 ```
 

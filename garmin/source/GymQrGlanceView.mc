@@ -2,7 +2,7 @@ import Toybox.Graphics;
 import Toybox.WatchUi;
 
 //! Compact At a Glance preview — keep this light (no QR encode).
-class LaFitnessQrGlanceView extends WatchUi.GlanceView {
+class GymQrGlanceView extends WatchUi.GlanceView {
 
     function initialize() {
         GlanceView.initialize();

@@ -3,7 +3,7 @@
 
 Public fixture tests use synthetic credentials (safe to commit).
 Real credentials: copy credentials.example.json → credentials.local.json (gitignored)
-or set LA_FITNESS_SECRET / LA_FITNESS_MEMBER_SUFFIX env vars.
+or set GYM_SECRET / GYM_MEMBER_SUFFIX env vars.
 """
 
 from __future__ import annotations
@@ -21,7 +21,7 @@ EPOCH = 1767225600
 RADIX32 = "0123456789ABCDEFGHIJKLMNOPQRSTUV"
 MEMBER_SUFFIX_RE = re.compile(r"^[0-9A-V]{1,5}$")
 
-# Synthetic fixture — not a real LA Fitness account
+# Synthetic fixture — not a real gym account
 FIXTURE_SECRET_B32 = "JBSWY3DPEHPK3PXP"
 FIXTURE_MEMBER_SUFFIX = "BOOAE"
 FIXTURE_KEY_HEX = "48656c6c6f21deadbeef"
@@ -97,15 +97,15 @@ def load_local_credentials() -> tuple[str, str]:
         secret = data["secretBase32"].strip()
         return secret, _member_suffix_from_config(data)
 
-    secret = os.environ.get("LA_FITNESS_SECRET", "").strip()
-    suffix_raw = os.environ.get("LA_FITNESS_MEMBER_SUFFIX", "").strip()
+    secret = os.environ.get("GYM_SECRET", "").strip()
+    suffix_raw = os.environ.get("GYM_MEMBER_SUFFIX", "").strip()
     if secret and suffix_raw:
         return secret, normalize_member_suffix(suffix_raw)
 
     raise SystemExit(
         "No local credentials. Copy docs/credentials.example.json to "
-        "docs/credentials.local.json or set LA_FITNESS_SECRET and "
-        "LA_FITNESS_MEMBER_SUFFIX."
+        "docs/credentials.local.json or set GYM_SECRET and "
+        "GYM_MEMBER_SUFFIX."
     )
 
 

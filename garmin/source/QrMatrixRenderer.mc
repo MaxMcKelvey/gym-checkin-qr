@@ -3,7 +3,7 @@ import Toybox.Lang;
 
 module QrMatrixRenderer {
     // Fraction of the shorter screen edge used for the QR symbol (not including quiet zone).
-    // Official LA Fitness card keeps the code compact with lots of white around it.
+    // Official Gym card keeps the code compact with lots of white around it.
     const QR_SCREEN_FRACTION = 0.52;
 
     function draw(dc as Dc, matrix as Array<Array>, title as String) as Void {

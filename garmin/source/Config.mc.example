@@ -1,0 +1,9 @@
+// Copy to Config.mc and set your credentials (see docs/extract-credentials.md).
+// Config.mc is gitignored — never commit real secrets.
+module Config {
+    const USE_FIXTURE = true;
+
+    // Public fixture from docs/algorithm.md — replace for real gym use.
+    const SECRET_B32 = "JBSWY3DPEHPK3PXP";
+    const MEMBER_SUFFIX = "BOOAE";
+}

@@ -10,8 +10,9 @@ bin/
 *.der
 developer_key*
 
-# LA Fitness credentials (extract locally — see docs/extract-credentials.md)
+# Gym credentials (extract locally — see docs/extract-credentials.md)
 docs/credentials.local.json
+garmin/source/Config.mc
 
 # React Native / Expo
 phone/node_modules/

@@ -4,7 +4,7 @@ import Toybox.Time;
 import Toybox.Timer;
 import Toybox.WatchUi;
 
-class LaFitnessQrView extends WatchUi.View {
+class GymQrView extends WatchUi.View {
 
     enum DisplayState {
         CONFIG_ERROR,

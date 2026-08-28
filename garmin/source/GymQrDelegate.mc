@@ -1,6 +1,6 @@
 import Toybox.WatchUi;
 
-class LaFitnessQrDelegate extends WatchUi.BehaviorDelegate {
+class GymQrDelegate extends WatchUi.BehaviorDelegate {
 
     function initialize() {
         BehaviorDelegate.initialize();

@@ -18,7 +18,7 @@ export default function RootLayout() {
         <Stack.Screen
           name="index"
           options={{
-            title: "LA Fitness",
+            title: "Gym",
           }}
         />
         <Stack.Screen

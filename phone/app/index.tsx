@@ -87,7 +87,7 @@ export default function HomeScreen() {
               <QRCode value={payload} size={280} backgroundColor="#FFFFFF" />
             </View>
             <Text className="text-xl font-semibold text-gray-900">
-              LA Fitness
+              Gym
             </Text>
             <Text className="font-mono text-sm tracking-wider text-gray-400">
               {payload}

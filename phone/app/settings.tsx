@@ -91,7 +91,7 @@ export default function SettingsScreen() {
             onChangeText={setSecretB32}
           />
           <Text className="text-sm text-gray-500">
-            From LA Fitness Android app CheckinValues — see docs/extract-credentials.md
+            From the Gym Android app CheckinValues — see docs/extract-credentials.md
             in the repo. Stored locally on this device only.
           </Text>
         </View>
