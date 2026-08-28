@@ -20,7 +20,7 @@ class GymQrGlanceView extends WatchUi.GlanceView {
             0,
             h / 2 - Graphics.getFontHeight(Graphics.FONT_SMALL) / 2 - 2,
             Graphics.FONT_SMALL,
-            WatchUi.loadResource(Rez.Strings.Title),
+            Config.displayName(),
             Graphics.TEXT_JUSTIFY_LEFT
         );
         dc.setColor(Graphics.COLOR_LT_GRAY, Graphics.COLOR_TRANSPARENT);

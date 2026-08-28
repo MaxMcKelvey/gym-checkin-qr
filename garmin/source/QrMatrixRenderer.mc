@@ -6,7 +6,7 @@ module QrMatrixRenderer {
     // Official Gym card keeps the code compact with lots of white around it.
     const QR_SCREEN_FRACTION = 0.52;
 
-    function draw(dc as Dc, matrix as Array<Array>, title as String) as Void {
+    function draw(dc as Dc, matrix as Array<Array>, title as String, refreshProgress as Float?) as Void {
         var modules = matrix.size();
         if (modules <= 0) {
             return;
@@ -63,6 +63,10 @@ module QrMatrixRenderer {
             title,
             Graphics.TEXT_JUSTIFY_CENTER
         );
+
+        if (refreshProgress != null) {
+            RefreshRingRenderer.draw(dc, refreshProgress);
+        }
     }
 
     function _isDark(cell as Lang.Object) as Boolean {

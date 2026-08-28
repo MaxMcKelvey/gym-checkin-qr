@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <strings xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="https://developer.garmin.com/downloads/connect-iq/resources.xsd">
-    <string id="AppName">Gym QR</string>
+    <string id="AppName">Gym</string>
     <string id="Title">Gym</string>
     <string id="GlanceHint">Check-in code</string>
     <string id="Generating">Generating…</string>

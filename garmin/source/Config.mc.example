@@ -1,9 +1,21 @@
 // Copy to Config.mc and set your credentials (see docs/extract-credentials.md).
 // Config.mc is gitignored — never commit real secrets.
+import Toybox.Lang;
+
 module Config {
     const USE_FIXTURE = true;
+
+    // Shown under the QR and as the launcher name (default: "Gym" if empty).
+    const DISPLAY_NAME = "Gym";
 
     // Public fixture from docs/algorithm.md — replace for real gym use.
     const SECRET_B32 = "JBSWY3DPEHPK3PXP";
     const MEMBER_SUFFIX = "BOOAE";
+
+    function displayName() as String {
+        if (DISPLAY_NAME.length() > 0) {
+            return DISPLAY_NAME;
+        }
+        return "Gym";
+    }
 }

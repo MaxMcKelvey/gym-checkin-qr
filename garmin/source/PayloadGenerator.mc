@@ -84,8 +84,13 @@ module PayloadGenerator {
     }
 
     function buildNow() as String {
+        return buildForMinute(minuteCounter(Time.now().value()));
+    }
+
+    function buildForMinute(minute as Number) as String {
         var key = Base32.decode(Config.SECRET_B32);
-        return build(Time.now().value(), key, Config.MEMBER_SUFFIX);
+        var unixSeconds = Constants.EPOCH + (minute * 60);
+        return build(unixSeconds, key, Config.MEMBER_SUFFIX);
     }
 
     function isConfigured() as Boolean {

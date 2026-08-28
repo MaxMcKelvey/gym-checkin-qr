@@ -5,6 +5,7 @@ bin/
 *.mir
 *.mangled
 *.debug.xml
+garmin/gen/
 
 # Developer key (keep private)
 *.der

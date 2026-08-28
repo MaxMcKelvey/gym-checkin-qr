@@ -1,5 +1,6 @@
 import Toybox.Graphics;
 import Toybox.Lang;
+import Toybox.System;
 import Toybox.Time;
 import Toybox.Timer;
 import Toybox.WatchUi;
@@ -13,49 +14,91 @@ class GymQrView extends WatchUi.View {
         BUILD_ERROR
     }
 
+    enum BuildTarget {
+        DISPLAY,
+        PENDING
+    }
+
+    private const UI_TICK_MS = 50;
+    private const LOGIC_TICKS = 20; // 50ms × 20 = 1s
+
     private var mState as DisplayState = BUILDING;
-    private var mPayload as String = "";
-    private var mMatrix as Array<Array>? = null;
+    private var mDisplayMatrix as Array<Array>? = null;
+    private var mDisplayMinute as Number = -1;
+    private var mPendingMatrix as Array<Array>? = null;
+    private var mPendingMinute as Number = -1;
     private var mBuilder as QRCodeBuilder? = null;
-    private var mLastMinute as Number = -1;
-    private var mTimer as Timer.Timer? = null;
+    private var mBuildTarget as BuildTarget = DISPLAY;
+    private var mBuildMinute as Number = -1;
+    private var mUiTimer as Timer.Timer? = null;
+    private var mLogicTickCount as Number = 0;
+    private var mWallSecond as Number = -1;
+    private var mWallSecondStartMs as Number = 0;
 
     function initialize() {
         View.initialize();
     }
 
     function onShow() as Void {
-        if (mTimer == null) {
-            mTimer = new Timer.Timer();
-            mTimer.start(method(:onTick), 1000, true);
+        if (mUiTimer == null) {
+            mUiTimer = new Timer.Timer();
+            mUiTimer.start(method(:onUiTick), UI_TICK_MS, true);
         }
-        refreshIfNeeded(true);
+        mLogicTickCount = 0;
+        _resetSmoothClock();
+        DisplayKeepAwake.onViewShown();
+        _ensureDisplayForMinute(_currentMinute(), true);
     }
 
     function onHide() as Void {
-        if (mTimer != null) {
-            mTimer.stop();
-            mTimer = null;
+        DisplayKeepAwake.onViewHidden();
+        if (mUiTimer != null) {
+            mUiTimer.stop();
+            mUiTimer = null;
         }
-        stopBuilder();
+        _stopBuilder();
     }
 
-    function onTick() as Void {
-        refreshIfNeeded(false);
+    function onUiTick() as Void {
+        DisplayKeepAwake.pulse();
+
+        mLogicTickCount += 1;
+        if (mLogicTickCount >= LOGIC_TICKS) {
+            mLogicTickCount = 0;
+            _onLogicTick();
+        }
+
+        WatchUi.requestUpdate();
+    }
+
+    private function _onLogicTick() as Void {
+        if (!PayloadGenerator.isConfigured()) {
+            if (mState != CONFIG_ERROR) {
+                mState = CONFIG_ERROR;
+            }
+            return;
+        }
+
+        _handleMinuteRollover();
+        _schedulePendingBuild();
     }
 
     function onUpdate(dc as Dc) as Void {
-        if (mState == READY && mMatrix != null) {
+        var progress = _smoothProgress();
+
+        if (mState == READY && mDisplayMatrix != null) {
             QrMatrixRenderer.draw(
                 dc,
-                mMatrix,
-                WatchUi.loadResource(Rez.Strings.Title)
+                mDisplayMatrix,
+                Config.displayName(),
+                progress
             );
             return;
         }
 
         dc.setColor(Graphics.COLOR_WHITE, Graphics.COLOR_WHITE);
         dc.clear();
+        RefreshRingRenderer.draw(dc, progress);
 
         if (mState == CONFIG_ERROR) {
             _drawMessage(dc, WatchUi.loadResource(Rez.Strings.ConfigError));
@@ -70,62 +113,158 @@ class GymQrView extends WatchUi.View {
         _drawMessage(dc, WatchUi.loadResource(Rez.Strings.Generating));
     }
 
-    private function refreshIfNeeded(force as Boolean) as Void {
-        if (!PayloadGenerator.isConfigured()) {
-            mState = CONFIG_ERROR;
-            WatchUi.requestUpdate();
-            return;
-        }
-
-        var minute = PayloadGenerator.minuteCounter(Time.now().value());
-        // Don't restart while a build is already in progress — the 1s timer
-        // was resetting the encoder every tick and leaving "Generating..." forever.
-        if (!force && (mState == BUILDING || (minute == mLastMinute && mMatrix != null))) {
-            return;
-        }
-
-        mLastMinute = minute;
-        mPayload = PayloadGenerator.buildNow();
-        startBuilder();
+    private function _resetSmoothClock() as Void {
+        mWallSecond = Time.now().value();
+        mWallSecondStartMs = System.getTimer();
     }
 
-    private function startBuilder() as Void {
-        stopBuilder();
-        mMatrix = null;
-        mState = BUILDING;
-        WatchUi.requestUpdate();
+    private function _smoothProgress() as Float {
+        var unix = Time.now().value();
+        if (unix != mWallSecond) {
+            mWallSecond = unix;
+            mWallSecondStartMs = System.getTimer();
+        }
+        var elapsedMs = System.getTimer() - mWallSecondStartMs;
+        var fraction = elapsedMs / 1000.0;
+        return RefreshRingRenderer.progressInMinuteSmooth(unix, fraction);
+    }
 
-        mBuilder = new QRCodeBuilder(mPayload, QRCodeBuilder.L);
+    private function _currentMinute() as Number {
+        return PayloadGenerator.minuteCounter(Time.now().value());
+    }
+
+    private function _handleMinuteRollover() as Void {
+        var minute = _currentMinute();
+        if (minute == mDisplayMinute) {
+            return;
+        }
+
+        if (mPendingMatrix != null && mPendingMinute == minute) {
+            _promotePending();
+            return;
+        }
+
+        if (mBuilder != null && mBuildTarget == PENDING && mBuildMinute == minute) {
+            return;
+        }
+
+        _ensureDisplayForMinute(minute, false);
+    }
+
+    private function _promotePending() as Void {
+        mDisplayMatrix = mPendingMatrix;
+        mDisplayMinute = mPendingMinute;
+        mPendingMatrix = null;
+        mPendingMinute = -1;
+        mState = READY;
+        _schedulePendingBuild();
+    }
+
+    private function _ensureDisplayForMinute(minute as Number, force as Boolean) as Void {
+        if (!PayloadGenerator.isConfigured()) {
+            mState = CONFIG_ERROR;
+            return;
+        }
+
+        if (!force && minute == mDisplayMinute && mDisplayMatrix != null) {
+            return;
+        }
+
+        if (mBuilder != null && mBuildTarget == DISPLAY && mBuildMinute == minute) {
+            return;
+        }
+
+        _startBuild(minute, DISPLAY);
+    }
+
+    private function _schedulePendingBuild() as Void {
+        if (mState != READY || mDisplayMinute < 0) {
+            return;
+        }
+
+        var nextMinute = mDisplayMinute + 1;
+        if (mPendingMatrix != null && mPendingMinute == nextMinute) {
+            return;
+        }
+        if (mBuilder != null && mBuildTarget == PENDING && mBuildMinute == nextMinute) {
+            return;
+        }
+
+        _startBuild(nextMinute, PENDING);
+    }
+
+    private function _startBuild(minute as Number, target as BuildTarget) as Void {
+        if (target == DISPLAY) {
+            if (mBuilder != null) {
+                if (mBuildTarget == PENDING && mBuildMinute == minute) {
+                    return;
+                }
+                _stopBuilder();
+            }
+            if (mDisplayMatrix == null) {
+                mState = BUILDING;
+            }
+        } else if (mBuilder != null) {
+            return;
+        }
+
+        mBuildTarget = target;
+        mBuildMinute = minute;
+
+        var payload = PayloadGenerator.buildForMinute(minute);
+        mBuilder = new QRCodeBuilder(payload, QRCodeBuilder.L);
         mBuilder.subscribe(weak(), :onBuilderStatus);
         var error = mBuilder.start();
         if (error != null) {
-            mState = BUILD_ERROR;
-            WatchUi.requestUpdate();
+            if (target == DISPLAY) {
+                mState = BUILD_ERROR;
+            }
+            _stopBuilder();
         }
     }
 
     function onBuilderStatus(args as { :status as QRCodeBuilder.Status, :payload as Lang.Object }) as Void {
-        var status = args[:status];
-        var payload = args[:payload];
+        if (args[:status] != QRCodeBuilder.FINISHED) {
+            return;
+        }
 
-        if (status == QRCodeBuilder.FINISHED) {
-            if (payload instanceof Lang.Number) {
-                mState = BUILD_ERROR;
-            } else if (payload instanceof Array) {
-                mMatrix = payload as Array<Array>;
-                mState = READY;
-            } else {
+        var payload = args[:payload];
+        var matrix = null as Array<Array>?;
+        if (payload instanceof Array) {
+            matrix = payload as Array<Array>;
+        }
+
+        var target = mBuildTarget;
+        var minute = mBuildMinute;
+        _stopBuilder();
+
+        if (matrix == null) {
+            if (target == DISPLAY) {
                 mState = BUILD_ERROR;
             }
-            WatchUi.requestUpdate();
+            return;
+        }
+
+        if (target == DISPLAY) {
+            mDisplayMatrix = matrix;
+            mDisplayMinute = minute;
+            mState = READY;
+            _schedulePendingBuild();
+        } else {
+            mPendingMatrix = matrix;
+            mPendingMinute = minute;
+            if (_currentMinute() == minute && mDisplayMinute != minute) {
+                _promotePending();
+            }
         }
     }
 
-    private function stopBuilder() as Void {
+    private function _stopBuilder() as Void {
         if (mBuilder != null) {
             mBuilder.stop();
             mBuilder = null;
         }
+        mBuildMinute = -1;
     }
 
     private function _drawMessage(dc as Dc, message as String) as Void {

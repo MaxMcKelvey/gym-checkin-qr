@@ -31,18 +31,26 @@ python3 docs/verify_payload.py --local
 
 ### 2. Garmin
 
-1. Copy the example config and edit your credentials (file is gitignored):
+1. Copy and edit local config (gitignored):
 
    ```bash
    cp garmin/source/Config.mc.example garmin/source/Config.mc
-   # edit Config.mc — set USE_FIXTURE = false and your secret + suffix
    ```
 
-2. Build for `fr965` with the Connect IQ SDK / Monkey C extension.
-3. Sideload `garmin.prg` to `Garmin/Apps` on the watch.
+   Set `DISPLAY_NAME` (e.g. `"LA Fitness"`), `SECRET_B32`, `MEMBER_SUFFIX`, and `USE_FIXTURE = false` for real gym use.
+
+2. Build (always sync strings first, then compile):
+
+   ```bash
+   python3 garmin/scripts/sync-strings.py
+   # VS Code: Monkey C: Build for Device
+   # or CLI — see garmin/README.md
+   ```
+
+3. Sideload `garmin/garmin.prg` → `Garmin/Apps` on the watch.
 4. Optionally add the widget under **At a Glance**.
 
-Details: [`garmin/README.md`](garmin/README.md)
+Full build steps: [`garmin/README.md`](garmin/README.md)
 
 ### 3. Phone
 
