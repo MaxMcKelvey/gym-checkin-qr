@@ -5,7 +5,8 @@ module PayloadGenerator {
     const MEMBER_SUFFIX_LENGTH = 5;
 
     function minuteCounter(unixSeconds as Number) as Number {
-        return (unixSeconds - Constants.EPOCH) / 60;
+        var yearStart = YearTime.startOfYearUtc(unixSeconds);
+        return (unixSeconds - yearStart) / 60;
     }
 
     function toRadix32(value as Number, width as Number) as String {
@@ -84,12 +85,11 @@ module PayloadGenerator {
     }
 
     function buildNow() as String {
-        return buildForMinute(minuteCounter(Time.now().value()));
+        return buildAt(Time.now().value());
     }
 
-    function buildForMinute(minute as Number) as String {
+    function buildAt(unixSeconds as Number) as String {
         var key = Base32.decode(Config.SECRET_B32);
-        var unixSeconds = Constants.EPOCH + (minute * 60);
         return build(unixSeconds, key, Config.MEMBER_SUFFIX);
     }
 

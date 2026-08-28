@@ -15,9 +15,9 @@ import os
 import re
 import struct
 import sys
+from datetime import datetime, timezone
 from pathlib import Path
 
-EPOCH = 1767225600
 RADIX32 = "0123456789ABCDEFGHIJKLMNOPQRSTUV"
 MEMBER_SUFFIX_RE = re.compile(r"^[0-9A-V]{1,5}$")
 
@@ -27,14 +27,25 @@ FIXTURE_MEMBER_SUFFIX = "BOOAE"
 FIXTURE_KEY_HEX = "48656c6c6f21deadbeef"
 
 FIXTURE_VECTORS = [
-    (1767225600, "@18K480000BOOAE"),
-    (1767225659, "@18K480000BOOAE"),
-    (1767225660, "@1UD6A0001BOOAE"),
-    (1767229200, "@122DD001SBOOAE"),
+    (1767225600, "@18K480000BOOAE"),  # 2026-01-01 00:00:00 UTC, M=0
+    (1767225659, "@18K480000BOOAE"),  # 2026-01-01 00:00:59 UTC, M=0
+    (1767225660, "@1UD6A0001BOOAE"),  # 2026-01-01 00:01:00 UTC, M=1
+    (1767229200, "@122DD001SBOOAE"),  # 2026-01-01 01:00:00 UTC, M=60
+    (1798761600, "@18K480000BOOAE"),  # 2027-01-01 00:00:00 UTC, M=0 (year reset)
 ]
 
 DOCS_DIR = Path(__file__).resolve().parent
 LOCAL_CREDENTIALS = DOCS_DIR / "credentials.local.json"
+
+
+def year_start_utc(unix_seconds: int) -> int:
+    dt = datetime.fromtimestamp(unix_seconds, tz=timezone.utc)
+    start = datetime(dt.year, 1, 1, tzinfo=timezone.utc)
+    return int(start.timestamp())
+
+
+def minute_counter(unix_seconds: int) -> int:
+    return (unix_seconds - year_start_utc(unix_seconds)) // 60
 
 
 def b32decode(s: str) -> bytes:
@@ -72,7 +83,7 @@ def normalize_member_suffix(value: str) -> str:
 
 
 def build_payload(unix_seconds: int, key: bytes, member_suffix: str) -> str:
-    m = (unix_seconds - EPOCH) // 60
+    m = minute_counter(unix_seconds)
     msg = struct.pack(">Q", m)
     digest = hmac.new(key, msg, hashlib.sha1).digest()
     off = digest[19] & 0x0F

@@ -2,7 +2,12 @@ import { hmac } from "@noble/hashes/hmac";
 import { sha1 } from "@noble/hashes/sha1";
 import { decode as b32decode } from "hi-base32";
 
-import { EPOCH, MEMBER_SUFFIX_LENGTH, RADIX32 } from "./constants";
+import { MEMBER_SUFFIX_LENGTH, RADIX32 } from "./constants";
+
+export function yearStartUtc(unixSeconds: number): number {
+  const d = new Date(unixSeconds * 1000);
+  return Date.UTC(d.getUTCFullYear(), 0, 1, 0, 0, 0) / 1000;
+}
 
 export function toRadix32(n: number, width: number): string {
   if (n < 0) {
@@ -35,7 +40,8 @@ export function isValidMemberSuffix(value: string): boolean {
 }
 
 export function minuteCounter(unixSeconds: number): number {
-  return Math.floor((unixSeconds - EPOCH) / 60);
+  const yearStart = yearStartUtc(unixSeconds);
+  return Math.floor((unixSeconds - yearStart) / 60);
 }
 
 export function decodeSecretB32(secretB32: string): Uint8Array {

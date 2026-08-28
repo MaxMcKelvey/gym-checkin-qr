@@ -15,6 +15,10 @@ developer_key*
 docs/credentials.local.json
 garmin/source/Config.mc
 
+# Python
+__pycache__/
+*.py[cod]
+
 # React Native / Expo
 phone/node_modules/
 phone/.expo/

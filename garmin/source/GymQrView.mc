@@ -184,9 +184,13 @@ class GymQrView extends WatchUi.View {
         }
 
         mBuildTarget = target;
-        mBuildMinute = minute;
+        var now = Time.now().value();
+        var targetUnix = target == PENDING
+            ? YearTime.nextMinuteUnix(now)
+            : YearTime.unixForMinute(minute, now);
+        mBuildMinute = PayloadGenerator.minuteCounter(targetUnix);
 
-        var payload = PayloadGenerator.buildForMinute(minute);
+        var payload = PayloadGenerator.buildAt(targetUnix);
         mBuilder = new QRCodeBuilder(payload, QRCodeBuilder.L);
         mBuilder.subscribe(weak(), :onBuilderStatus);
         var error = mBuilder.start();

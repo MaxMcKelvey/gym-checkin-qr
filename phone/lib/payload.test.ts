@@ -9,6 +9,7 @@ const VECTORS: [number, string][] = [
   [1767225659, "@18K480000BOOAE"],
   [1767225660, "@1UD6A0001BOOAE"],
   [1767229200, "@122DD001SBOOAE"],
+  [1798761600, "@18K480000BOOAE"], // 2027-01-01 — M resets to 0
 ];
 
 function bytesToHex(bytes: Uint8Array): string {

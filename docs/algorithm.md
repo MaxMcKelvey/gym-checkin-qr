@@ -35,19 +35,16 @@ Radix-32 encoding: repeated division by 32, map remainder to alphabet character,
 
 ## Time base
 
-All time math uses **UTC**.
+All time math uses **UTC**. The minute counter resets at the start of each calendar year.
 
 ```
-EPOCH = 1767225600   // 2026-01-01 00:00:00 UTC (unix seconds)
-
-M = floor((unixSeconds - EPOCH) / 60)
+yearStart = unixSeconds of Jan 1 00:00:00 UTC for the current year
+M = floor((unixSeconds - yearStart) / 60)
 ```
 
-`M` is the number of whole minutes since the epoch. The rolling code and time counter both derive from the same `M` for a given moment.
+`M` is the number of whole minutes since **January 1 UTC of the same calendar year** as `unixSeconds`. The rolling code and time counter both derive from the same `M` for a given moment.
 
-**Important:** Codes are only meaningful for `M >= 0` (on or after 2026-01-01 UTC). Before that date, `M` is negative and the protocol does not apply.
-
-Within a minute, `M` is constant — e.g. `00:00:00` through `00:00:59` UTC on 2026-01-01 all use `M = 0`.
+Within a minute, `M` is constant — e.g. `00:00:00` through `00:00:59` UTC on New Year's Day all use `M = 0`. On `2027-01-01 00:00:00 UTC`, `M` resets to `0` again (it does not continue counting from the previous year).
 
 ---
 
@@ -137,6 +134,7 @@ The repo includes a **synthetic public fixture** (not a real account) so tests c
 | 2026-01-01 00:00:59 | 0 | `@18K480000BOOAE` |
 | 2026-01-01 00:01:00 | 1 | `@1UD6A0001BOOAE` |
 | 2026-01-01 01:00:00 | 60 | `@122DD001SBOOAE` |
+| 2027-01-01 00:00:00 | 0 | `@18K480000BOOAE` |
 
 Fixture secret: `JBSWY3DPEHPK3PXP` · fixture member suffix: `BOOAE`
 
