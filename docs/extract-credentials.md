@@ -120,6 +120,8 @@ your_username
 | **Member suffix** | Last 5 chars of a known-good check-in QR | Radix-32 string (e.g. `O5TUJ`) — **not** visible as plain text in most `strings` dumps. Open the official app QR and copy the last 5 characters once your secret validates. |
 | **Username** | Near end of dump | Account login name — not used in the QR algorithm. |
 
+In a `strings` dump the secret is often **concatenated** with trailing junk — lowercase letters, decimal digits (`0`, `1`, `8`, `9`), or other nearby field text. Copy only the contiguous run of valid base32 characters; do not include anything after the secret ends. For example, a valid key is **16 characters** long — if you see a longer string, take the first 16 chars that match the alphabet above and verify with `python3 docs/verify_payload.py --local`.
+
 Copy the secret and member suffix into local config (see below). **Do not commit them to git.**
 
 ---
