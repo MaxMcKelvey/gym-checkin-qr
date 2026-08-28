@@ -3,6 +3,7 @@
 
 from __future__ import annotations
 
+import argparse
 import re
 import sys
 from pathlib import Path
@@ -26,8 +27,7 @@ def read_display_name() -> str:
     return match.group(1)
 
 
-def main() -> int:
-    name = read_display_name()
+def write_strings(name: str) -> None:
     escaped = (
         name.replace("&", "&amp;")
         .replace("<", "&lt;")
@@ -47,6 +47,24 @@ def main() -> int:
 """,
         encoding="utf-8",
     )
+
+
+def main() -> int:
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument(
+        "--restore",
+        action="store_true",
+        help=f"Reset strings.xml to the committed default ({DEFAULT_NAME!r})",
+    )
+    args = parser.parse_args()
+
+    if args.restore:
+        write_strings(DEFAULT_NAME)
+        print(f"strings.xml: restored AppName/Title = {DEFAULT_NAME!r}")
+        return 0
+
+    name = read_display_name()
+    write_strings(name)
     print(f"strings.xml: AppName/Title = {name!r}")
     return 0
 

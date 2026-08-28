@@ -1,17 +1,17 @@
 import Toybox.Graphics;
 import Toybox.Lang;
+import Toybox.Math;
 
 //! Minute countdown ring along the watch bezel (12 o'clock, clockwise).
 module RefreshRingRenderer {
-    const PEN_WIDTH = 6;
-    const INSET = 3;
-    const ARC_START = 90; // 12 o'clock
+    const PEN_WIDTH = 12;
+    const INSET = 4;
+    const ARC_START = 90; // 12 o'clock (Garmin: 0 = 3 o'clock, CCW)
 
     function progressInMinute(unixSeconds as Number) as Float {
         return progressInMinuteSmooth(unixSeconds, 0.0);
     }
 
-    //! Sub-second progress: unix second + fraction within [0, 1).
     function progressInMinuteSmooth(unixSeconds as Number, secondFraction as Float) as Float {
         var sec = unixSeconds % 60;
         if (sec < 0) {
@@ -37,11 +37,13 @@ module RefreshRingRenderer {
         var cy = h / 2;
         var half = w < h ? w : h;
         var r = half / 2 - INSET - PEN_WIDTH / 2;
+        var cap = PEN_WIDTH / 2;
 
         dc.setPenWidth(PEN_WIDTH);
 
         dc.setColor(Graphics.COLOR_LT_GRAY, Graphics.COLOR_TRANSPARENT);
         dc.drawArc(cx, cy, r, Graphics.ARC_CLOCKWISE, ARC_START, ARC_START);
+        _drawCap(dc, cx, cy, r, ARC_START, Graphics.COLOR_LT_GRAY, cap);
 
         var clamped = progress;
         if (clamped < 0.0) {
@@ -58,9 +60,27 @@ module RefreshRingRenderer {
         dc.setColor(Graphics.COLOR_BLACK, Graphics.COLOR_TRANSPARENT);
         if (sweep >= 359) {
             dc.drawArc(cx, cy, r, Graphics.ARC_CLOCKWISE, ARC_START, ARC_START);
+            _drawCap(dc, cx, cy, r, ARC_START, Graphics.COLOR_BLACK, cap);
             return;
         }
 
-        dc.drawArc(cx, cy, r, Graphics.ARC_CLOCKWISE, ARC_START, ARC_START - sweep);
+        var endAngle = ARC_START - sweep;
+        dc.drawArc(cx, cy, r, Graphics.ARC_CLOCKWISE, ARC_START, endAngle);
+        _drawCap(dc, cx, cy, r, ARC_START, Graphics.COLOR_BLACK, cap);
+        _drawCap(dc, cx, cy, r, endAngle, Graphics.COLOR_BLACK, cap);
+    }
+
+    function _drawCap(dc as Dc, cx as Number, cy as Number, r as Number, degrees as Number, color as Number, cap as Number) as Void {
+        var pt = _pointOnRing(cx, cy, r, degrees);
+        dc.setColor(color, Graphics.COLOR_TRANSPARENT);
+        dc.fillCircle(pt[0], pt[1], cap);
+    }
+
+    //! Garmin degrees: 0 = 3 o'clock, increasing CCW.
+    function _pointOnRing(cx as Number, cy as Number, r as Number, degrees as Number) as [Number, Number] {
+        var rad = degrees * Math.PI / 180.0;
+        var x = (cx + r * Math.cos(rad)).toNumber();
+        var y = (cy - r * Math.sin(rad)).toNumber();
+        return [x, y];
     }
 }

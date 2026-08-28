@@ -2,11 +2,10 @@ import Toybox.Graphics;
 import Toybox.Lang;
 
 module QrMatrixRenderer {
-    // Fraction of the shorter screen edge used for the QR symbol (not including quiet zone).
-    // Official Gym card keeps the code compact with lots of white around it.
     const QR_SCREEN_FRACTION = 0.52;
 
-    function draw(dc as Dc, matrix as Array<Array>, title as String, refreshProgress as Float?) as Void {
+    //! QR code and title only (no bezel ring). Used for bitmap caching.
+    function drawContent(dc as Dc, matrix as Array<Array>, title as String) as Void {
         var modules = matrix.size();
         if (modules <= 0) {
             return;
@@ -32,7 +31,6 @@ module QrMatrixRenderer {
         var quiet = moduleSize * 2;
         var block = qrPixels + (quiet * 2);
         var originX = (screenW - qrPixels) / 2;
-        // Leave room for title below; center the QR+title block vertically.
         var contentHeight = block + titleHeight;
         var blockTop = (screenH - contentHeight) / 2;
         if (blockTop < 8) {
@@ -55,7 +53,6 @@ module QrMatrixRenderer {
             }
         }
 
-        dc.setColor(Graphics.COLOR_BLACK, Graphics.COLOR_TRANSPARENT);
         dc.drawText(
             screenW / 2,
             originY + qrPixels + quiet + 6,
@@ -63,7 +60,10 @@ module QrMatrixRenderer {
             title,
             Graphics.TEXT_JUSTIFY_CENTER
         );
+    }
 
+    function draw(dc as Dc, matrix as Array<Array>, title as String, refreshProgress as Float?) as Void {
+        drawContent(dc, matrix, title);
         if (refreshProgress != null) {
             RefreshRingRenderer.draw(dc, refreshProgress);
         }

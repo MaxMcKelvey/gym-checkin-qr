@@ -19,8 +19,8 @@ class GymQrView extends WatchUi.View {
         PENDING
     }
 
-    private const UI_TICK_MS = 50;
-    private const LOGIC_TICKS = 20; // 50ms × 20 = 1s
+    private const UI_TICK_MS = 16;
+    private const LOGIC_TICK_MS = 1000;
 
     private var mState as DisplayState = BUILDING;
     private var mDisplayMatrix as Array<Array>? = null;
@@ -31,7 +31,7 @@ class GymQrView extends WatchUi.View {
     private var mBuildTarget as BuildTarget = DISPLAY;
     private var mBuildMinute as Number = -1;
     private var mUiTimer as Timer.Timer? = null;
-    private var mLogicTickCount as Number = 0;
+    private var mLogicTimer as Timer.Timer? = null;
     private var mWallSecond as Number = -1;
     private var mWallSecondStartMs as Number = 0;
 
@@ -44,7 +44,10 @@ class GymQrView extends WatchUi.View {
             mUiTimer = new Timer.Timer();
             mUiTimer.start(method(:onUiTick), UI_TICK_MS, true);
         }
-        mLogicTickCount = 0;
+        if (mLogicTimer == null) {
+            mLogicTimer = new Timer.Timer();
+            mLogicTimer.start(method(:onLogicTick), LOGIC_TICK_MS, true);
+        }
         _resetSmoothClock();
         DisplayKeepAwake.onViewShown();
         _ensureDisplayForMinute(_currentMinute(), true);
@@ -56,25 +59,24 @@ class GymQrView extends WatchUi.View {
             mUiTimer.stop();
             mUiTimer = null;
         }
+        if (mLogicTimer != null) {
+            mLogicTimer.stop();
+            mLogicTimer = null;
+        }
+        QrContentCache.invalidate();
         _stopBuilder();
     }
 
     function onUiTick() as Void {
         DisplayKeepAwake.pulse();
-
-        mLogicTickCount += 1;
-        if (mLogicTickCount >= LOGIC_TICKS) {
-            mLogicTickCount = 0;
-            _onLogicTick();
-        }
-
         WatchUi.requestUpdate();
     }
 
-    private function _onLogicTick() as Void {
+    function onLogicTick() as Void {
         if (!PayloadGenerator.isConfigured()) {
             if (mState != CONFIG_ERROR) {
                 mState = CONFIG_ERROR;
+                WatchUi.requestUpdate();
             }
             return;
         }
@@ -87,12 +89,10 @@ class GymQrView extends WatchUi.View {
         var progress = _smoothProgress();
 
         if (mState == READY && mDisplayMatrix != null) {
-            QrMatrixRenderer.draw(
-                dc,
-                mDisplayMatrix,
-                Config.displayName(),
-                progress
-            );
+            var title = Config.displayName();
+            QrContentCache.ensure(dc, mDisplayMatrix, title);
+            QrContentCache.blit(dc);
+            RefreshRingRenderer.draw(dc, progress);
             return;
         }
 
@@ -157,6 +157,7 @@ class GymQrView extends WatchUi.View {
         mPendingMatrix = null;
         mPendingMinute = -1;
         mState = READY;
+        QrContentCache.invalidate();
         _schedulePendingBuild();
     }
 
@@ -249,6 +250,7 @@ class GymQrView extends WatchUi.View {
             mDisplayMatrix = matrix;
             mDisplayMinute = minute;
             mState = READY;
+            QrContentCache.invalidate();
             _schedulePendingBuild();
         } else {
             mPendingMatrix = matrix;

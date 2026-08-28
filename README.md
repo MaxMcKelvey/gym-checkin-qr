@@ -39,13 +39,13 @@ python3 docs/verify_payload.py --local
 
    Set `DISPLAY_NAME` (e.g. `"LA Fitness"`), `SECRET_B32`, `MEMBER_SUFFIX`, and `USE_FIXTURE = false` for real gym use.
 
-2. Build (always sync strings first, then compile):
+2. Build:
 
    ```bash
-   python3 garmin/scripts/sync-strings.py
-   # VS Code: Monkey C: Build for Device
-   # or CLI — see garmin/README.md
+   ./garmin/scripts/build.sh
    ```
+
+   Syncs `DISPLAY_NAME` for compile, then restores `strings.xml` to `Gym` so git stays clean.
 
 3. Sideload `garmin/garmin.prg` → `Garmin/Apps` on the watch.
 4. Optionally add the widget under **At a Glance**.

@@ -26,37 +26,21 @@ cp source/Config.mc.example source/Config.mc
 
 ## Build and sideload
 
-Every build has two steps: **sync strings**, then **compile**.
-
-### 1. Sync launcher strings
-
-`DISPLAY_NAME` lives in Monkey C (`Config.mc`), but the watch launcher reads `resources/strings/strings.xml` at compile time. Run the sync script before each build so both match:
+Use the build script — it syncs `DISPLAY_NAME` from `Config.mc` for compile, then **restores** `strings.xml` to the committed default (`Gym`) so local names like `"LA Fitness"` never dirty git.
 
 ```bash
-python3 scripts/sync-strings.py
+./scripts/build.sh
 ```
 
-This writes `AppName` and `Title` in `strings.xml` from `Config.mc` (falls back to `Config.mc.example`, then `"Gym"`).
-
-### 2. Compile
-
-**VS Code:** open the `garmin/` folder, use **Monkey C: Build for Device** (run sync first if you changed `DISPLAY_NAME`).
-
-**CLI** (from repo root):
+Or manually:
 
 ```bash
-python3 garmin/scripts/sync-strings.py
-
-java -Xms1g -Dfile.encoding=UTF-8 -Dapple.awt.UIElement=true \
-  -jar "$CONNECTIQ_SDK/bin/monkeybrains.jar" \
-  -o garmin/garmin.prg \
-  -f garmin/monkey.jungle \
-  -y ~/garmin-dev/developer_key \
-  -d fr965 -w -r
+python3 scripts/sync-strings.py          # sync from Config.mc
+# ... monkeybrains build ...
+python3 scripts/sync-strings.py --restore # reset strings.xml for git
 ```
 
-Set `CONNECTIQ_SDK` to your SDK path, e.g.  
-`~/Library/Application Support/Garmin/ConnectIQ/Sdks/connectiq-sdk-mac-9.2.0-…`
+`DISPLAY_NAME` in `Config.mc` still controls the in-app label at runtime; only the launcher string resource needs this compile-time sync.
 
 ### 3. Sideload
 
