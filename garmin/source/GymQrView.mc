@@ -1,6 +1,5 @@
 import Toybox.Graphics;
 import Toybox.Lang;
-import Toybox.System;
 import Toybox.Time;
 import Toybox.Timer;
 import Toybox.WatchUi;
@@ -19,8 +18,7 @@ class GymQrView extends WatchUi.View {
         PENDING
     }
 
-    private const UI_TICK_MS = 16;
-    private const LOGIC_TICK_MS = 1000;
+    private const TICK_MS = 1000;
 
     private var mState as DisplayState = BUILDING;
     private var mDisplayMatrix as Array<Array>? = null;
@@ -30,75 +28,58 @@ class GymQrView extends WatchUi.View {
     private var mBuilder as QRCodeBuilder? = null;
     private var mBuildTarget as BuildTarget = DISPLAY;
     private var mBuildMinute as Number = -1;
-    private var mUiTimer as Timer.Timer? = null;
-    private var mLogicTimer as Timer.Timer? = null;
-    private var mWallSecond as Number = -1;
-    private var mWallSecondStartMs as Number = 0;
+    private var mTimer as Timer.Timer? = null;
 
     function initialize() {
         View.initialize();
     }
 
     function onShow() as Void {
-        if (mUiTimer == null) {
-            mUiTimer = new Timer.Timer();
-            mUiTimer.start(method(:onUiTick), UI_TICK_MS, true);
+        if (mTimer == null) {
+            mTimer = new Timer.Timer();
+            mTimer.start(method(:onTick), TICK_MS, true);
         }
-        if (mLogicTimer == null) {
-            mLogicTimer = new Timer.Timer();
-            mLogicTimer.start(method(:onLogicTick), LOGIC_TICK_MS, true);
-        }
-        _resetSmoothClock();
         DisplayKeepAwake.onViewShown();
         _ensureDisplayForMinute(_currentMinute(), true);
     }
 
     function onHide() as Void {
         DisplayKeepAwake.onViewHidden();
-        if (mUiTimer != null) {
-            mUiTimer.stop();
-            mUiTimer = null;
-        }
-        if (mLogicTimer != null) {
-            mLogicTimer.stop();
-            mLogicTimer = null;
+        if (mTimer != null) {
+            mTimer.stop();
+            mTimer = null;
         }
         QrContentCache.invalidate();
         _stopBuilder();
     }
 
-    function onUiTick() as Void {
+    function onTick() as Void {
         DisplayKeepAwake.pulse();
-        WatchUi.requestUpdate();
-    }
 
-    function onLogicTick() as Void {
         if (!PayloadGenerator.isConfigured()) {
             if (mState != CONFIG_ERROR) {
                 mState = CONFIG_ERROR;
-                WatchUi.requestUpdate();
             }
+            WatchUi.requestUpdate();
             return;
         }
 
         _handleMinuteRollover();
         _schedulePendingBuild();
+        WatchUi.requestUpdate();
     }
 
     function onUpdate(dc as Dc) as Void {
-        var progress = _smoothProgress();
-
         if (mState == READY && mDisplayMatrix != null) {
             var title = Config.displayName();
             QrContentCache.ensure(dc, mDisplayMatrix, title);
             QrContentCache.blit(dc);
-            RefreshRingRenderer.draw(dc, progress);
+            QrMatrixRenderer.drawCountdown(dc, mDisplayMatrix, _secondsUntilRefresh());
             return;
         }
 
         dc.setColor(Graphics.COLOR_WHITE, Graphics.COLOR_WHITE);
         dc.clear();
-        RefreshRingRenderer.draw(dc, progress);
 
         if (mState == CONFIG_ERROR) {
             _drawMessage(dc, WatchUi.loadResource(Rez.Strings.ConfigError));
@@ -113,20 +94,13 @@ class GymQrView extends WatchUi.View {
         _drawMessage(dc, WatchUi.loadResource(Rez.Strings.Generating));
     }
 
-    private function _resetSmoothClock() as Void {
-        mWallSecond = Time.now().value();
-        mWallSecondStartMs = System.getTimer();
-    }
-
-    private function _smoothProgress() as Float {
-        var unix = Time.now().value();
-        if (unix != mWallSecond) {
-            mWallSecond = unix;
-            mWallSecondStartMs = System.getTimer();
+    private function _secondsUntilRefresh() as Number {
+        var sec = Time.now().value() % 60;
+        if (sec < 0) {
+            sec += 60;
         }
-        var elapsedMs = System.getTimer() - mWallSecondStartMs;
-        var fraction = elapsedMs / 1000.0;
-        return RefreshRingRenderer.progressInMinuteSmooth(unix, fraction);
+        var remaining = 60 - sec;
+        return remaining > 0 ? remaining : 60;
     }
 
     private function _currentMinute() as Number {

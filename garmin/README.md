@@ -55,7 +55,7 @@ python3 scripts/sync-strings.py --restore # reset strings.xml for git
 
 - QR encodes the **15-character payload only** (not the title).
 - Black modules on white; ECC **L**, binary mode (payload contains `@`).
-- Bezel ring shows progress through the current minute (updates ~20×/sec).
+- Title above the QR; `Ns` countdown below (light gray, small font).
 - Next minute’s QR is pre-built in the background for a seamless swap at `:00`.
 
 ### Display while open
@@ -77,7 +77,6 @@ garmin/
 │   ├── GymQrView.mc
 │   ├── GymQrGlanceView.mc
 │   ├── PayloadGenerator.mc
-│   ├── RefreshRingRenderer.mc
 │   ├── QrMatrixRenderer.mc
 │   └── qr/                    # On-device QR encoder (MIT)
 └── resources/strings/strings.xml
